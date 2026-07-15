@@ -111,6 +111,38 @@
             margin-bottom: 0;
         }
 
+                /* สร้าง Class สำหรับ "การซ่อนแถบซ้าย" */
+        .sidebar-hidden {
+            transform: translateX(-100%); /* ดันแผงซ้ายออกไปนอกจอ */
+            transition: transform 0.3s ease; /* เพิ่ม Animation เวลาขยับ */
+        }
+
+        /* คุมแผงซ้ายเดิม ให้มีการขยับที่นุ่มนวล */
+        .sidebar-container { /* เช็กชื่อ Class ของแผงซ้ายคุณใน HTML นะครับ ถ้าเป็น ID ก็ใช้ # */
+            transition: transform 0.3s ease;
+            position: relative; /* เพื่อให้วางปุ่มสลับได้ */
+        }
+
+        /* ปุ่มสำหรับกด สลับเปิด/ปิด */
+        .toggle-sidebar-btn {
+            position: absolute;
+            top: 20px; /* วางไว้แถวๆ ด้านบน */
+            right: -40px; /* ให้ยื่นออกไปนอกแผงซ้ายนิดหน่อย เวลาแผงปิดปุ่มยังอยู่ */
+            width: 40px;
+            height: 40px;
+            background: #ff6a42; /* สีเดียวกับปุ่มส่งข้อมูลของคุณ */
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0; /* มนแค่ฝั่งขวา */
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1001; /* ให้อยู่เหนือแผนที่ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        }
+
         /* 📱 โค้ดแก้บัคสำหรับหน้าจอมือถือ (Responsive CSS Media Queries) */
         @media (max-width: 768px) {
             body {
@@ -190,6 +222,11 @@
         </div>
         <div id="feedContent" class="feed-content">
             </div>
+    </div>
+
+    <div id="leftSidebar" class="sidebar-container"> <button id="toggleSidebarBtn" class="toggle-sidebar-btn" onclick="toggleSidebar()">
+        &lt; </button>
+    
     </div>
 
     <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
@@ -357,6 +394,23 @@
                 document.getElementById('user-msg').value = '';
             }
         }
+            // ฟังก์ชันสลับสถานะแผงซ้าย ย่อ/ขยาย
+    function toggleSidebar() {
+        const sidebar = document.getElementById('leftSidebar');
+        const toggleBtn = document.getElementById('toggleSidebarBtn');
+        
+        if (!sidebar || !toggleBtn) return;
+
+        // สลับ Class 'sidebar-hidden' (ถ้ามีอยู่ให้ลบ ถ้าไม่มีให้ใส่)
+        sidebar.classList.toggle('sidebar-hidden');
+        
+        // เปลี่ยนลูกศรบนปุ่มตามสถานะ
+        if (sidebar.classList.contains('sidebar-hidden')) {
+            toggleBtn.innerHTML = '&gt;'; // เมื่อแผงปิด เปลี่ยนเป็น > (ให้กดเปิด)
+        } else {
+            toggleBtn.innerHTML = '&lt;'; // เมื่อแผงเปิด เปลี่ยนเป็น < (ให้กดปิด)
+        }
+    }
 
         loadSafetyMap();
     </script>
