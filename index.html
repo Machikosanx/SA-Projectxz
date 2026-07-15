@@ -595,9 +595,10 @@ function showIncidentFeed(clickedGroup, allData) {
             </div>
         `;
 
-// เอาไปผูกกับ marker เช่น marker.bindPopup(popupHTML);
-
-        loadSafetyMap();
+    // 🎯 2. สั่งรันโหลดแผนที่ทันทีเมื่อโครงสร้าง HTML โหลดเสร็จสิ้นอย่างปลอดภัย
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSafetyMap();
+        });
     </script>
 </body>
 </html>
