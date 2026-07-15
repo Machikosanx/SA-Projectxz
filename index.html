@@ -342,11 +342,9 @@
     </div>
 
 
-    <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
+<!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-    // แทนที่ alert() ด้วย SweetAlert2 เพื่อให้คุมหน้าตาได้
-
         // กำหนดพิกัดแผนที่เริ่มต้นที่กรุงเทพฯ
         const map = L.map('map').setView([13.8284, 100.5284], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -354,8 +352,9 @@
         }).addTo(map);
 
         let currentMarker;
+        let safetyCircles = []; // Array สำหรับเก็บวงกลมกลุ่มเสี่ยงเพื่อใช้เคลียร์ได้อย่างปลอดภัย
 
-        // ดักจับการคลิก/จิ้มนิ้ว บนแผนที่
+        // ดักจับการคลิก/จิ้มนิ้ว บนแผนที่เพื่อปักหมุด
         map.on('click', (e) => {
             document.getElementById('lat').value = e.latlng.lat.toFixed(6);
             document.getElementById('lng').value = e.latlng.lng.toFixed(6);
@@ -364,126 +363,138 @@
             currentMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
         });
 
-        // ฟังก์ชันดึงจุดพิกัดทั้งหมดจากฐานข้อมูล MySQL มาวาดเป็นวงกลมรัศมีพื้นที่เสี่ยง
-        // 1. ฟังก์ชันดึงพิกัด และมัดรวมกลุ่มที่อยู่ใกล้กัน (Grouping) ก่อนวาดลงแผนที่
-function loadSafetyMap() {
-    fetch('https://sa-projectxz.onrender.com/api/incidents')
-        .then(res => res.json())
-        .then(data => {
-            // เคลียร์วงกลมเดิมบนแผนที่ถ้าจำเป็น (ตามโค้ดต้นฉบับของคุณ)
+        // 1. ดึงพิกัด และมัดรวมกลุ่มที่อยู่ใกล้กัน (Grouping) ก่อนวาดลงแผนที่
+        function loadSafetyMap() {
+            fetch('https://sa-projectxz.onrender.com/api/incidents')
+                .then(res => res.json())
+                .then(data => {
+                    // ล้างวงกลมอันเก่าบนแผนที่ออกให้หมดก่อนวาดใหม่ (ป้องกันปัญหาวาดซับซ้อน)
+                    safetyCircles.forEach(circle => map.removeLayer(circle));
+                    safetyCircles = [];
 
-            const threshold = 0.0005; // กำหนดระยะมัดรวมกลุ่มพิกัดที่ใกล้กัน (ประมาณ 50 เมตร)
-            const groups = [];
+                    const threshold = 0.0005; // ระยะมัดรวมกลุ่มพิกัดที่ใกล้กัน (ประมาณ 50 เมตร)
+                    const groups = [];
 
-            // ทำการรวมกลุ่มข้อมูลที่อยู่ใกล้เคียงกัน
-            data.forEach(item => {
-                let foundGroup = groups.find(g => {
-                    return Math.abs(g.latitude - item.latitude) < threshold &&
-                           Math.abs(g.longitude - item.longitude) < threshold;
-                });
+                    // ทำการรวมกลุ่มข้อมูลที่อยู่ใกล้เคียงกัน
+                    data.forEach(item => {
+                        // แปลงเป็น Float ป้องกันบัคกรณีข้อมูลที่ส่งมาเป็น String
+                        const lat = parseFloat(item.latitude);
+                        const lng = parseFloat(item.longitude);
 
-                if (foundGroup) {
-                    foundGroup.items.push(item);
-                    // ถ้าในกลุ่มมีใครแจ้งเตือนเป็นสีแดง (Red) ให้กลุ่มนั้นเป็นสีแดงตามไปด้วย
-                    if (item.risk_level === 'Red') {
-                        foundGroup.risk_level = 'Red';
-                    }
-                } else {
-                    groups.push({
-                        latitude: item.latitude,
-                        longitude: item.longitude,
-                        risk_level: item.risk_level,
-                        items: [item]
+                        if (isNaN(lat) || isNaN(lng)) return; // ข้ามรายการที่พิกัดไม่สมบูรณ์
+
+                        let foundGroup = groups.find(g => {
+                            return Math.abs(g.latitude - lat) < threshold &&
+                                   Math.abs(g.longitude - lng) < threshold;
+                        });
+
+                        if (foundGroup) {
+                            foundGroup.items.push(item);
+                            // ถ้าในกลุ่มมีใครแจ้งเตือนเป็นสีแดง (Red) ให้กลุ่มนั้นเป็นสีแดงตามไปด้วย
+                            if (item.risk_level === 'Red') {
+                                foundGroup.risk_level = 'Red';
+                            }
+                        } else {
+                            groups.push({
+                                latitude: lat,
+                                longitude: lng,
+                                risk_level: item.risk_level,
+                                items: [item]
+                            });
+                        }
                     });
-                }
-            });
 
-            // วาดวงกลมกลุ่มละ 1 วงเท่านั้นพอ!
-            groups.forEach(group => {
-                let zoneColor = group.risk_level === 'Red' ? '#ff0000' : '#ffcc00';
-                
-                let circle = L.circle([group.latitude, group.longitude], {
-                    color: zoneColor,
-                    fillColor: zoneColor,
-                    fillOpacity: 0.3,
-                    radius: 40 // ปรับรัศมีกลุ่มให้ครอบคลุมสวยงามขึ้นเล็กน้อย
-                }).addTo(map);
+                    // วาดวงกลมกลุ่มละ 1 วง
+                    groups.forEach(group => {
+                        let zoneColor = group.risk_level === 'Red' ? '#ff0000' : '#ffcc00';
+                        
+                        let circle = L.circle([group.latitude, group.longitude], {
+                            color: zoneColor,
+                            fillColor: zoneColor,
+                            fillOpacity: 0.3,
+                            radius: 40 // รัศมีกลุ่ม
+                        }).addTo(map);
 
-                // พอกดคลิกที่กลุ่มวงกลมนี้ จะส่งข้อมูลทั้งกลุ่มไปโชว์ใน Feedbox
-                circle.on('click', function() {
-                    showIncidentFeed(group, data); 
-                });
-            });
-        })
-        .catch(err => console.error('โหลดข้อมูลล้มเหลว:', err));
-}
+                        safetyCircles.push(circle); // เก็บวงกลมไว้ใน Array
 
-// 2. ฟังก์ชันแสดง Feedbox รวบรวมเหตุการณ์ทั้งหมดในบริเวณพิกัดกลุ่มนั้น
-function showIncidentFeed(clickedGroup, allData) {
-    const panel = document.getElementById('incidentFeedPanel');
-    const content = document.getElementById('feedContent');
-    const title = document.getElementById('feedTitle');
-    
-    const sidebar = document.querySelector('.sidebar');
-
-    if (!panel || !content || !title || !sidebar) return;
-
-    // แก้หัวข้อหลักให้ครอบคลุม
-    title.innerHTML = `🚨 รายการแจ้งเหตุในบริเวณนี้`;
-    content.innerHTML = '';
-
-    // ดึงเหตุการณ์ทั้งหมดที่อยู่ใกล้เคียงพิกัดกลุ่มนี้ในระยะ 50 เมตรมารวมกัน
-    const threshold = 0.0005;
-    const recordsInThisArea = allData.filter(info => {
-        return Math.abs(info.latitude - clickedGroup.latitude) < threshold && 
-               Math.abs(info.longitude - clickedGroup.longitude) < threshold;
-    });
-
-    // เรียงลำดับจากใหม่ไปเก่า (แสดงเหตุการณ์ล่าสุดขึ้นก่อน)
-    recordsInThisArea.sort((a, b) => {
-        return new Date(b.created_at || b.date || b.timestamp) - new Date(a.created_at || a.date || a.timestamp);
-    });
-
-    recordsInThisArea.forEach(info => {
-        let timeSource = info.created_at || info.date || info.timestamp;
-        let reportDate = timeSource ? new Date(timeSource).toLocaleString('th-TH') : 'ไม่ระบุวันเวลา';
-
-        content.innerHTML += `
-            <div class="feed-item" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-left: 4px solid rgba(255,123,84,0.95); padding: 10px; margin-bottom: 8px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.92); text-align: left;">
-                
-                <!-- แสดงประเภทภัยคุกคามแยกย่อยเฉพาะของเหตุการณ์นี้ในตัวการ์ด -->
-                <div style="display: inline-block; background: rgba(255, 123, 84, 0.15); color: #ffcc80; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-bottom: 8px; border: 1px solid rgba(255, 123, 84, 0.3);">
-                    ⚠️ #${info.hazard_type || 'ทั่วไป'}
-                </div><br>
-                
-                <b style="color: rgba(255,204,128,0.95);">👤 ผู้แจ้ง:</b> ${info.user_alias || 'ไม่ประสงค์ออกนาม'}<br>
-                <b style="color: rgba(255,204,128,0.95);">📝 รายละเอียด:</b> ${info.description || 'ไม่มีรายละเอียด'}<br>
-                <small style="color: rgba(255,255,255,0.55);">📅 ${reportDate}</small>
-            </div>
-        `;
-    });
-
-    // 📱 ถ้าเปิดในมือถือ ซ่อน sidebar เมื่อเปิด feed panel
-    if (window.innerWidth <= 768) {
-        sidebar.style.setProperty('display', 'none', 'important');
-    }
-
-    panel.style.display = 'flex';
-}
-
-    function closeFeedPanel() {
-        const panel = document.getElementById('incidentFeedPanel');
-        const sidebar = document.querySelector('.sidebar');
-
-        if (panel) panel.style.display = 'none';
-
-        // 📱 คืน sidebar ในมือถือ
-        if (window.innerWidth <= 768 && sidebar) {
-            sidebar.style.setProperty('display', 'block', 'important');
+                        // พอกดคลิกที่กลุ่มวงกลมนี้ จะส่งข้อมูลทั้งกลุ่มไปโชว์ใน Feedbox
+                        circle.on('click', function() {
+                            showIncidentFeed(group, data); 
+                        });
+                    });
+                })
+                .catch(err => console.error('โหลดข้อมูลล้มเหลว:', err));
         }
-    }
 
-        // ฟังก์ชันส่งข้อมูลการปักหมุดจากหน้าบ้าน ไปให้หลังบ้านบันทึกลง MySQL
+        // 2. แสดง Feedbox รวบรวมเหตุการณ์ทั้งหมดในบริเวณพิกัดกลุ่มนั้น
+        function showIncidentFeed(clickedGroup, allData) {
+            const panel = document.getElementById('incidentFeedPanel');
+            const content = document.getElementById('feedContent');
+            const title = document.getElementById('feedTitle');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (!panel || !content || !title || !sidebar) return;
+
+            title.innerHTML = `🚨 รายการแจ้งเหตุในบริเวณนี้`;
+            content.innerHTML = '';
+
+            const threshold = 0.0005;
+            const clickedLat = parseFloat(clickedGroup.latitude);
+            const clickedLng = parseFloat(clickedGroup.longitude);
+
+            // ดึงเหตุการณ์ทั้งหมดที่อยู่ใกล้เคียงพิกัดกลุ่มนี้มารวมกัน
+            const recordsInThisArea = allData.filter(info => {
+                const infoLat = parseFloat(info.latitude);
+                const infoLng = parseFloat(info.longitude);
+                return Math.abs(infoLat - clickedLat) < threshold && 
+                       Math.abs(infoLng - clickedLng) < threshold;
+            });
+
+            // เรียงลำดับจากใหม่ไปเก่า (แสดงเหตุการณ์ล่าสุดขึ้นก่อน)
+            recordsInThisArea.sort((a, b) => {
+                return new Date(b.created_at || b.date || b.timestamp) - new Date(a.created_at || a.date || a.timestamp);
+            });
+
+            recordsInThisArea.forEach(info => {
+                let timeSource = info.created_at || info.date || info.timestamp;
+                let reportDate = timeSource ? new Date(timeSource).toLocaleString('th-TH') : 'ไม่ระบุวันเวลา';
+
+                content.innerHTML += `
+                    <div class="feed-item" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-left: 4px solid rgba(255,123,84,0.95); padding: 10px; margin-bottom: 8px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.92); text-align: left;">
+                        
+                        <!-- แสดงประเภทภัยคุกคามแยกย่อยเฉพาะของเหตุการณ์นี้ในตัวการ์ด -->
+                        <div style="display: inline-block; background: rgba(255, 123, 84, 0.15); color: #ffcc80; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-bottom: 8px; border: 1px solid rgba(255, 123, 84, 0.3);">
+                            ⚠️ #${info.hazard_type || 'ทั่วไป'}
+                        </div><br>
+                        
+                        <b style="color: rgba(255,204,128,0.95);">👤 ผู้แจ้ง:</b> ${info.user_alias || 'ไม่ประสงค์ออกนาม'}<br>
+                        <b style="color: rgba(255,204,128,0.95);">📝 รายละเอียด:</b> ${info.description || 'ไม่มีรายละเอียด'}<br>
+                        <small style="color: rgba(255,255,255,0.55);">📅 ${reportDate}</small>
+                    </div>
+                `;
+            });
+
+            // ถ้าเปิดในมือถือ ซ่อน sidebar เมื่อเปิด feed panel
+            if (window.innerWidth <= 768) {
+                sidebar.style.setProperty('display', 'none', 'important');
+            }
+
+            panel.style.display = 'flex';
+        }
+
+        function closeFeedPanel() {
+            const panel = document.getElementById('incidentFeedPanel');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (panel) panel.style.display = 'none';
+
+            // คืน sidebar ในมือถือ
+            if (window.innerWidth <= 768 && sidebar) {
+                sidebar.style.setProperty('display', 'block', 'important');
+            }
+        }
+
+        // ฟังก์ชันส่งข้อมูลการปักหมุดไปยังหลังบ้าน
         function submitReport() {
             const hazard_type = document.getElementById('hazard_type').value;
             const description = document.getElementById('description').value;
@@ -497,8 +508,7 @@ function showIncidentFeed(clickedGroup, allData) {
                     text: 'กรุณาเลือกตำแหน่งบนแผนที่ และกรอกรายละเอียดให้ครบถ้วน!',
                     icon: 'warning',
                     confirmButtonText: 'ตกลง',
-                    // ปรับธีมสีให้เข้ากับแอปของคุณ
-                    background: '#1a0a24', 
+                    background: '#1a0a24',
                     color: '#ffffff',
                     confirmButtonColor: '#ff7b54'
                 });
@@ -517,8 +527,7 @@ function showIncidentFeed(clickedGroup, allData) {
                     text: 'ระบบทำรายการ: บันทึกจุดเสี่ยงเรียบร้อย!',
                     icon: 'success',
                     confirmButtonText: 'ตกลง',
-                    // ปรับธีมสีให้เข้ากับแอปของคุณ
-                    background: '#1a0a24', 
+                    background: '#1a0a24',
                     color: '#ffffff',
                     confirmButtonColor: '#ff7b54'
                 });
@@ -537,8 +546,7 @@ function showIncidentFeed(clickedGroup, allData) {
                     text: 'เกิดข้อผิดพลาดในการส่งข้อมูลไปยัง Server!',
                     icon: 'error',
                     confirmButtonText: 'ตกลง',
-                    // ปรับธีมสีให้เข้ากับแอปของคุณ
-                    background: '#1a0a24', 
+                    background: '#1a0a24',
                     color: '#ffffff',
                     confirmButtonColor: '#ff7b54'
                 });
@@ -565,7 +573,7 @@ function showIncidentFeed(clickedGroup, allData) {
                 else if (msg.includes("ครับ") || msg.includes("ผม") || msg.includes("ค่ะ") || msg.includes("ฉัน")) {
                     reply = "P Diddy รับฟังอยู่นะคะ ข้อมูลทุกอย่างจะปลอดภัยและไม่ระบุตัวตนแน่นอนค่ะ มีพฤติกรรมไหนที่ทำให้คุณรู้สึกไม่ปลอดภัยไหมคะ?";
                 }
-                else if (msg.includes("P Diddy") || msg.includes("ai") || msg.includes("AI") || msg.includes("ai")) {
+                else if (msg.includes("P Diddy") || msg.includes("ai") || msg.includes("AI")) {
                     reply = "เป็น ส้นตีนไรละ เเล้วทำไม?";
                 }
                 else {
@@ -580,22 +588,7 @@ function showIncidentFeed(clickedGroup, allData) {
             }
         }
 
-        // ตัวอย่างรูปแบบการจัดวางแท็กใน .bindPopup หรือ .setPopupContent ของ Bro
-        const popupHTML = `
-            <div style="text-align: left;">
-                <div style="font-weight: bold; color: #ff5722; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-                    🚨 #${info.hazard_type || 'แจ้งเหตุ'}
-                </div>
-                <div style="color: #444; margin-bottom: 6px;">
-                    <b>รายละเอียด:</b> ${info.description || 'ไม่มีรายละเอียด'}
-                </div>
-                <div style="color: #888; font-size: 11px; border-top: 1px solid #f0f0f0; padding-top: 4px; margin-top: 4px;">
-                    👤 ผู้แจ้งเหตุ: <span style="color: #231145; font-weight: 500;">${info.user_alias || 'user_anonymous'}</span>
-                </div>
-            </div>
-        `;
-
-    // 🎯 2. สั่งรันโหลดแผนที่ทันทีเมื่อโครงสร้าง HTML โหลดเสร็จสิ้นอย่างปลอดภัย
+        // สั่งรันโหลดแผนที่ทันทีเมื่อโครงสร้างเว็บพร้อมทำงาน
         document.addEventListener('DOMContentLoaded', () => {
             loadSafetyMap();
         });
