@@ -214,28 +214,78 @@
 
         // ฟังก์ชันดึงจุดพิกัดทั้งหมดจากฐานข้อมูล MySQL มาวาดเป็นวงกลมรัศมีพื้นที่เสี่ยง
         function loadSafetyMap() {
-            fetch('https://sa-projectxz.onrender.com/api/incidents')
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(item => {
-                        let zoneColor = item.risk_level === 'Red' ? '#ff0000' : '#ffcc00';
-                        
-                        L.circle([item.latitude, item.longitude], {
-                            color: zoneColor,
-                            fillColor: zoneColor,
-                            fillOpacity: 0.3,
-                            radius: 30
-                        }).addTo(map).bindPopup(`
-                            <div style="color: black; font-family: Tahoma; font-size: 14px;">
-                                <b>🚨 #${item.hazard_type}</b><br>
-                                <b>รายละเอียด:</b> ${item.description}<br>
-                                <small style="color: gray;">ผู้แจ้งเหตุ: ${item.user_alias}</small>
-                            </div>
-                        `);
-                    });
-                })
-                .catch(err => console.error('โหลดข้อมูลแผนที่ล้มเหลว:', err));
+    fetch('https://sa-projectxz.onrender.com/api/incidents')
+        .then(res => res.json())
+        .then(data => {
+            // โค้ดเคลียร์ Map เดิมของ Bro...
+
+            data.forEach(item => {
+                let zoneColor = item.risk_level === 'Red' ? '#ff0000' : '#ffcc00';
+                
+                let circle = L.circle([item.latitude, item.longitude], {
+                    color: zoneColor,
+                    fillColor: zoneColor,
+                    fillOpacity: 0.3,
+                    radius: 30
+                }).addTo(map);
+
+                // 🔥 ปรับตอนคลิก: ส่ง ID ของตัวที่คลิกไปด้วยเลย จะได้ไม่หลุด
+                circle.on('click', function() {
+                    showIncidentFeed(item, data); 
+                });
+            });
+        })
+        .catch(err => console.error('โหลดข้อมูลล้มเหลว:', err));
+}
+
+    // 🔥 ฟังก์ชันแสดงผลกล่องข้อมูลมุมจอเวอร์ชันชัวร์ 100%
+    function showIncidentFeed(clickedItem, allData) {
+        const panel = document.getElementById('incidentFeedPanel');
+        const content = document.getElementById('feedContent');
+        const title = document.getElementById('feedTitle');
+        
+        if (!panel || !content || !title) {
+            console.error("หา Element ของกล่องข้อมูลไม่เจอ! เช็กว่าใส่ HTML หรือยัง");
+            return;
         }
+
+        // ตั้งชื่อหัวข้อตามประเภทภัย
+        title.innerHTML = `🚨 Area: #${clickedItem.hazard_type || 'แจ้งเหตุ'}`;
+        
+        // ล้างข้อมูลเก่า
+        content.innerHTML = '';
+
+        // กรองหาข้อมูลที่อยู่ใกล้เคียงกันมากๆ (เผื่อทศนิยมเพี้ยน)
+        const recordsInThisArea = allData.filter(info => {
+            // ระยะห่างกันไม่เกิน 0.0001 (ประมาณ 10 เมตร) ถือว่าเป็นจุดเดียวกัน
+            return Math.abs(info.latitude - clickedItem.latitude) < 0.0001 && 
+                Math.abs(info.longitude - clickedItem.longitude) < 0.0001;
+        });
+
+        // วนลูปสร้างรายการการ์ด
+        recordsInThisArea.forEach(info => {
+            // เช็กเรื่องฟิลด์วันเวลา (เผื่อในระบบใช้ชื่ออื่น เช่น date, time, timestamp)
+            let timeSource = info.created_at || info.date || info.timestamp;
+            let reportDate = timeSource ? new Date(timeSource).toLocaleString('th-TH') : 'ไม่ระบุวันเวลา';
+
+            content.innerHTML += `
+                <div class="feed-item" style="background: #f9f9f9; border-left: 4px solid #ff4d4d; padding: 8px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; color: black; text-align: left;">
+                    <b>👤 ผู้แจ้ง:</b> ${info.user_alias || 'ไม่ประสงค์ออกนาม'}<br>
+                    <b>📝 รายละเอียด:</b> ${info.description || 'ไม่มีรายละเอียด'}<br>
+                    <small style="color: #888;">📅 ${reportDate}</small>
+                </div>
+            `;
+        });
+
+        // สั่งแสดงผลกล่อง
+        panel.style.styleOpacity = "1"; // กันเหนียว
+        panel.style.display = 'flex';
+    }
+
+    // ฟังก์ชันปิดกล่อง
+    function closeFeedPanel() {
+        document.getElementById('incidentFeedPanel').style.display = 'none';
+    }
 
         // ฟังก์ชันส่งข้อมูลการปักหมุดจากหน้าบ้าน ไปให้หลังบ้านบันทึกลง MySQL
         function submitReport() {
