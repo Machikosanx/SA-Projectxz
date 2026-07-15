@@ -98,6 +98,12 @@
             overflow-y: auto;
             color: #333;
         }
+        /* สำหรับกล่องเนื้อหาหลัก (วางไว้นอก @media หรือในสไตล์ปกติของ feedContent) */
+        #feedContent {
+            flex-grow: 1;
+            overflow-y: auto; /* เลื่อนเฉพาะเนื้อหาภายในการ์ด */
+            padding: 10px;
+        }
 
 
         /* 📱 โค้ดแก้บัคสำหรับหน้าจอมือถือ (Responsive CSS Media Queries) */
@@ -124,20 +130,25 @@
 
        /* 🔥 ปรับตำแหน่ง Feed Box ให้ลงไปเสียบแทนที่แผงเมนูสีม่วงด้านล่างในโหมดมือถือ */
         @media (max-width: 768px) {
-            .incident-feed-panel {
-                position: absolute !important;
-                top: auto !important;
-                left: 0 !important;
-                bottom: 0 !important; /* บังคับให้ชิดขอบล่างสุดของจอ */
-                transform: none !important;
-                width: 100% !important; /* ขยายเต็มความกว้างจอซ้ายไปขวา */
-                height: 50vh !important; /* ให้สูงครึ่งหนึ่งของหน้าจอพอดี (ปรับเพิ่ม-ลดได้ตามชอบ) */
-                max-height: 50vh !important;
-                border-radius: 16px 16px 0 0 !important; /* มนเฉพาะขอบบน ซ้าย-ขวา ให้ฟีลเหมือน Bottom Sheet ของแอปมือถือ */
-                z-index: 9999 !important;
-                box-shadow: 0 -4px 20px rgba(0,0,0,0.3) !important;
-            }
+        .incident-feed-panel {
+            position: absolute !important;
+            top: auto !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            transform: none !important;
+            width: 100% !important;
+            height: 50vh !important;
+            max-width: 100% !important;
+            max-height: 50vh !important;
+            border-radius: 16px 16px 0 0 !important;
+            z-index: 9999 !important;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.3) !important;
+            
+            /* 🔥 จุดสำคัญ: เปิดให้เลื่อนแกน Y (แนวตั้ง) ลงไปอ่านข้อมูลข้างล่างได้ถ้าข้อมูลเยอะล้นจอ */
+            overflow-y: auto !important; 
+            -webkit-overflow-scrolling: touch; /* ทำให้การใช้นิ้วปัดบนมือถือลื่นไหลไม่สะดุด (Smooth Scroll สำหรับ iOS) */
         }
+    }
             
     </style>
 </head>
