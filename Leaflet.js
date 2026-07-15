@@ -1,46 +1,69 @@
 // แก้ไขฟังก์ชันดึงข้อมูลให้รองรับการเปิดไฟล์จากเครื่องโดยตรง
 function loadSafetyMap() {
-    // 1. สร้างกลุ่ม Layer ของวงกลมไว้ล่วงหน้า (เพื่อเอาไว้สั่งหดขนาดตอนซูม)
-    if (!window.circleLayerGroup) {
-        window.circleLayerGroup = L.layerGroup().addTo(map);
-    }
-
     fetch('https://sa-projectxz.onrender.com/api/incidents')
-        .then(res => {
-            if(!res.ok) throw new Error('Network response was not ok');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            window.circleLayerGroup.clearLayers(); // เคลียร์ของเก่าออกก่อน
-            
+            // เคลียร์ marker หรือวงกลมเก่าตามปกติ...
+
             data.forEach(item => {
                 let zoneColor = item.risk_level === 'Red' ? '#ff0000' : '#ffcc00';
                 
-                // คำนวณรัศมีเริ่มต้นตามระดับการซูมปัจจุบัน
-                const currentZoom = map.getZoom();
-                let initialRadius = currentZoom >= 17 ? 15 : 30; // ถ้าซูมใกล้มากให้เหลือ 15 เมตรพอดีซอย
-
+                // สร้างวงกลม
                 let circle = L.circle([item.latitude, item.longitude], {
                     color: zoneColor,
                     fillColor: zoneColor,
                     fillOpacity: 0.3,
-                    radius: initialRadius // ใช้ค่ารัศมีที่คำนวณแล้ว
-                }).bindPopup(`
-                    <div style="color: black; font-family: Tahoma; font-size: 14px;">
-                        <b>🚨 #${item.hazard_type}</b><br>
-                        <b>รายละเอียด:</b> ${item.description}<br>
-                        <small style="color: gray;">ผู้แจ้งเหตุ: ${item.user_alias}</small>
-                    </div>
-                `);
+                    radius: 30
+                }).addTo(map);
 
-                window.circleLayerGroup.addLayer(circle);
+                // 🔥 เปลี่ยนจาก Popup เป็นการคลิกแล้วเปิดกล่อง Feed ด้านข้าง
+                circle.on('click', function() {
+                    showIncidentFeed(item, data); 
+                });
             });
         })
-        .catch(err => {
-            console.log('โหมดออฟไลน์: กำลังโหลดแผนที่ฐานเริ่มต้น...');
-        });
+        .catch(err => console.error('โหลดข้อมูลล้มเหลว:', err));
 }
 
+// 🔥 ฟังก์ชันจัดการแสดงผลข้อมูลในกล่อง Feed
+function showIncidentFeed(clickedItem, allData) {
+    const panel = document.getElementById('incidentFeedPanel');
+    const content = document.getElementById('feedContent');
+    const title = document.getElementById('feedTitle');
+    
+    // ตั้งชื่อหัวข้อตามประเภทภัย
+    title.innerHTML = `🚨 Area: #${clickedItem.hazard_type}`;
+    
+    // กรองหาข้อมูลที่อยู่พิกัดเดียวกัน (กรณีที่มีการกดซ้อนทับกันหลายคน สีเข้มๆ)
+    const recordsInThisArea = allData.filter(info => 
+        info.latitude === clickedItem.latitude && info.longitude === clickedItem.longitude
+    );
+
+    // ล้างข้อมูลเก่าในกล่องออกก่อน
+    content.innerHTML = '';
+
+    // วนลูปสร้างรายการการ์ดข้อมูลคนที่แจ้งเหตุเข้ามาในพิกัดนี้
+    recordsInThisArea.forEach(info => {
+        // จัดฟอร์แมตวันที่และเวลา (หากใน DB เก็บเป็น timestamp)
+        let reportDate = info.created_at ? new Date(info.created_at).toLocaleString('th-TH') : 'ไม่ระบุวันเวลา';
+
+        content.innerHTML += `
+            <div class="feed-item">
+                <b>👤 ผู้แจ้ง:</b> ${info.user_alias || 'ไม่ประสงค์ออกนาม'}<br>
+                <b>📝 รายละเอียด:</b> ${info.description || 'ไม่มีรายละเอียด'}<br>
+                <small style="color: #888;">📅 ${reportDate}</small>
+            </div>
+        `;
+    });
+
+    // สั่งเปิดกล่อง UI ขึ้นมาโชว์
+    panel.style.display = 'flex';
+}
+
+// ฟังก์ชันสำหรับกดปุ่มกากบาทเพื่อปิดกล่อง
+function closeFeedPanel() {
+    document.getElementById('incidentFeedPanel').style.display = 'none';
+}
 // 2. 🔥 ดักจับเหตุการณ์ตอนผู้ใช้ซูมเข้า-ออก (Zoom) เพื่อสั่งให้วงกลมหด/ขยายตามความเหมาะสม
 if (typeof map !== 'undefined') {
     map.on('zoomend', function() {
