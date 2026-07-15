@@ -12,8 +12,8 @@
                         L.circle([item.latitude, item.longitude], {
                             color: zoneColor,
                             fillColor: zoneColor,
-                            fillOpacity: 0.4,
-                            radius: 100
+                            fillOpacity: 0.3,
+                            radius: 30
                         }).addTo(map).bindPopup(`
                             <div style="color: black; font-family: Tahoma; font-size: 14px;">
                                 <b>🚨 #${item.hazard_type}</b><br>
