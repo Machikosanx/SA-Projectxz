@@ -58,20 +58,37 @@
         .chat-box { background: #1f0a33; padding: 12px; border-radius: 8px; height: 120px; overflow-y: auto; border: 1px solid #4a287a; font-size: 14px; line-height: 1.5; }
 
                 /* กล่องแสดงข้อมูลแจ้งเหตุที่จะโผล่มามุมจอ */
+                /* 1. โค้ดเดิมที่ปรับความนุ่มนวลเวลาเปิด (ปรับค่าเล็กน้อย) */
         .incident-feed-panel {
             position: absolute;
             bottom: 20px;
-            right: 20px; /* หรือเปลี่ยนเป็น left: 20px; ถ้าอยากให้อยู่ฝั่งซ้ายตามรูป */
+            right: 20px; /* หรือ left: 20px ตามที่ Bro ปรับไว้ */
             width: 320px;
-            max-height: 400px;
+            max-height: 380px;
             background: white;
-            z-index: 1000; /* ให้อยู่เหนือแผนที่ */
+            z-index: 3000; /* 🔥 เพิ่มเป็น 3000 เพื่อให้อยู่เหนือแผงสีม่วงในมือถือแน่นอน */
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             font-family: 'Tahoma', sans-serif;
-            display: none; /* ตอนแรกซ่อนไว้ก่อน พอคลิกวงกลมค่อยสั่งเปิด */
+            display: none;
             flex-direction: column;
             overflow: hidden;
+        }
+
+        /* 2. 🔥 เพิ่มโค้ดชุดนี้ต่อท้าย (Responsive สำหรับหน้าจอมือถือ) */
+        @media (max-width: 768px) {
+            .incident-feed-panel {
+                /* บังคับให้อยู่กึ่งกลางหน้าจอโทรศัพท์พอดี */
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                bottom: auto;
+                right: auto;
+                width: 85%; /* ปรับขนาดให้เข้ากับความกว้างหน้าจอมือถือ */
+                max-height: 60vh; /* ความสูงไม่เกิน 60% ของความสูงจอ */
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            }
         }
 
         .feed-header {
@@ -347,7 +364,6 @@
                 document.getElementById('user-msg').value = '';
             }
         }
-
 
         loadSafetyMap();
     </script>
