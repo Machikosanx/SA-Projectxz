@@ -18,21 +18,93 @@
             background: #1a0826; 
             color: white; 
         }
-        .sidebar { 
-            width: 32%; 
-            padding: 25px; 
-            background: #2d124d; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            box-shadow: 4px 0 15px rgba(0,0,0,0.3); 
-            z-index: 1000; 
-            box-sizing: border-box; 
-            overflow-y: auto;
+        .sidebar{
+            width: 550px !important;
+            height: 100vh !important;
+            padding: 18px 16px !important;
+            background: linear-gradient(145deg, rgba(32, 10, 55, 0.72), rgba(10, 5, 23, 0.78)) !important;
+            border-right: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 10px 0 35px rgba(0,0,0,0.25) !important;
+            backdrop-filter: blur(12px) !important;
+            overflow-y: auto !important;
+            box-sizing: border-box !important;
         }
-        .map-container { 
-            width: 68%; 
-            height: 100%; 
+
+        .sidebar > div{
+            background: rgba(255,255,255,0.03) !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            border-radius: 14px !important;
+            padding: 14px 12px !important;
+        }
+
+        .sidebar hr{
+            border: 0 !important;
+            border-top: 1px solid rgba(255,255,255,0.08) !important;
+            margin: 14px 0 !important;
+        }
+
+        .sidebar h2{
+            margin: 0 0 6px 0 !important;
+            font-size: 20px !important;
+            background: linear-gradient(45deg, #ff7b54, #ffcc80) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            text-shadow: none !important;
+        }
+
+        .sidebar label{
+            font-size: 13px !important;
+            color: rgba(255,255,255,0.65) !important;
+            margin-top: 12px !important;
+        }
+
+        .sidebar input,
+        .sidebar select,
+        .sidebar button{
+            border-radius: 12px !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            background: rgba(255,255,255,0.04) !important;
+            color: rgba(255,255,255,0.92) !important;
+            padding: 11px 12px !important;
+            font-size: 14px !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .sidebar input[readonly]{
+            background: rgba(255,255,255,0.02) !important;
+            color: rgba(255,255,255,0.55) !important;
+        }
+
+        .sidebar input:focus,
+        .sidebar select:focus{
+            border-color: rgba(255,123,84,0.6) !important;
+            box-shadow: 0 0 0 3px rgba(255,123,84,0.12) !important;
+            background: rgba(255,255,255,0.06) !important;
+        }
+
+        .sidebar button{
+            border: none !important;
+            margin-top: 10px !important;
+            font-weight: 800 !important;
+            background: linear-gradient(90deg, #ff7b54, #ffcc80) !important;
+            color: #1a0a24 !important;
+        }
+        .sidebar button:hover{
+            filter: brightness(1.03) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .chat-box{
+            background: rgba(255,255,255,0.02) !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: none !important;
+        }
+
+        .map-container{
+            width: calc(100% - 320px) !important;
+            flex: 1 !important;
         }
         #map { 
             width: 100%; 
