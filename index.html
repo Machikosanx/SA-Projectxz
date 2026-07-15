@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <!-- บังคับให้หน้าเว็บปรับขนาดตามหน้าจอมือถือทุกรุ่น -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Speak Up App - Safety Map (Mobile Friendly)</title>
+    
+    <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { 
+            font-family: 'Tahoma', sans-serif; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: row; 
+            height: 100vh; 
+            background: #1a0826; 
+            color: white; 
+        }
+        .sidebar { 
+            width: 32%; 
+            padding: 25px; 
+            background: #2d124d; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3); 
+            z-index: 1000; 
+            box-sizing: border-box; 
+            overflow-y: auto;
+        }
+        .map-container { 
+            width: 68%; 
+            height: 100%; 
+        }
+        #map { 
+            width: 100%; 
+            height: 100%; 
+        }
+        h2 { margin-top: 0; color: #ff7657; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        label { font-size: 14px; color: #bcaaa4; display: block; margin-top: 10px; }
+        input, select, button { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 6px; 
+            margin-bottom: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #4a287a; 
+            background: #3d1d66; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 16px; /* ใช้ 16px เพื่อไม่ให้ iOS ซูมหน้าจออัตโนมัติเวลาโฟกัสช่องกรอก */
+        }
+        input[readonly] { background: #240b42; color: #888; border-color: #33145a; }
+        button { background: #ff7657; color: white; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; margin-top: 15px; }
+        button:hover { background: #ff5e3a; }
+        .chat-box { background: #1f0a33; padding: 12px; border-radius: 8px; height: 120px; overflow-y: auto; border: 1px solid #4a287a; font-size: 14px; line-height: 1.5; }
+
+        /* 📱 โค้ดแก้บัคสำหรับหน้าจอมือถือ (Responsive CSS Media Queries) */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column; /* เปลี่ยนการวางเลย์เอาท์จากแนวนอนเป็นแนวตั้ง */
+                overflow-y: auto;
+                height: auto;
+            }
+            .sidebar {
+                width: 100%; /* ขยายเต็มความกว้างหน้าจอมือถือ */
+                order: 2; /* ย้ายเมนูกรอกข้อมูลลงมาด้านล่างแผนที่ เพื่อให้ปักหมุดในมือถือง่ายขึ้น */
+                padding: 15px;
+                box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+            }
+            .map-container {
+                width: 100%;
+                height: 50vh; /* ล็อกความสูงหน้าจอแผนที่ในมือถือไว้ที่ครึ่งจอพอดี ไม่ให้บังส่วนอื่น */
+                order: 1;
+            }
+            h2 { font-size: 20px; }
+            button { padding: 14px; font-size: 16px; } /* ขยายขนาดปุ่มเพิ่มความง่ายในการกดผ่านมือถือ */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- โซนเมนูควบคุม และ AI Agent ด้านซ้ายมือ (ในมือถือจะอยู่ด้านล่าง) -->
+    <div class="sidebar">
+        <div>
+            <h2>📣 Speak Up App</h2>
+            <p style="font-size: 12px; color: #ffab91; margin-top: -10px;">เปลี่ยนความเงียบเป็นพลัง แจ้งเหตุคุกคามแบบ Anonymous</p>
+            
+            <label>🚨 ประเภทภัยคุกคามทางเพศ</label>
+            <select id="hazard_type">
+                <option value="อนาจาร">#อนาจาร (ทำอนาจาร/โชว์สิ่งไม่เหมาะสม)</option>
+                <option value="สตอล์กเกอร์">#สตอล์กเกอร์ (สะกดรอยตาม/แอบถ่าย)</option>
+                <option value="พื้นที่จุดอับ">#พื้นที่จุดอับ (ซอยเปลี่ยว/เสาไฟดับ)</option>
+            </select>
+            
+            <label>📝 รายละเอียดเหตุการณ์ / ช่วงเวลาที่พบ</label>
+            <input type="text" id="description" placeholder="เช่น เจอคนเดินตามช่วงสองทุ่ม, วินพูดจาลวนลาม">
+            
+            <label>📍 ละติจูด (Latitude)</label>
+            <input type="text" id="lat" placeholder="จิ้มเลือกจุดบนแผนที่ด้านบน" readonly>
+            
+            <label>📍 ลองจิจูด (Longitude)</label>
+            <input type="text" id="lng" placeholder="จิ้มเลือกจุดบนแผนที่ด้านบน" readonly>
+            
+            <label>⚠️ ระดับความอันตรายของพื้นที่</label>
+            <select id="risk_level">
+                <option value="Red">🔴 สีแดง (อันตรายมาก/เกิดเหตุสดๆ ร้อนๆ)</option>
+                <option value="Yellow">🟡 สีเหลือง (พื้นที่เฝ้าระวัง/เคยมีรายงานประปราย)</option>
+            </select>
+            
+            <button onclick="submitReport()">ส่งข้อมูลปักหมุดแผนที่</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #4a287a; margin: 20px 0;">
+
+        <!-- ระบบ AI Agent พี่รุ้ง คอยรับเรื่อง -->
+        <div>
+            <h3 style="color: #ffcc80; margin-bottom: 8px; font-size: 15px;">🤖 AI Agent P Diddy (รับเรื่อง 24 ชม.)</h3>
+            <div class="chat-box" id="chat-content"><b>P Diddy AI:</b> สวัสดีค่ะ มีเรื่องไม่สบายใจหรืออยากปรึกษาข้อกฎหมายไหมคะ? ข้อมูลของคุณจะถูกปิดเป็นความลับสูงสุดค่ะ</div>
+            <input type="text" id="user-msg" placeholder="พิมพ์ข้อความเล่าเหตุการณ์ หรือถามกฎหมาย..." onkeypress="handleChat(event)">
+        </div>
+    </div>
+
+    <!-- โซนแสดงแผนที่จริงด้านขวามือ (ในมือถือจะอยู่ด้านบนครึ่งจอ) -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+    <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // กำหนดพิกัดแผนที่เริ่มต้นที่กรุงเทพฯ
+        const map = L.map('map').setView([13.8284, 100.5284], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let currentMarker;
+
+        // ดักจับการคลิก/จิ้มนิ้ว บนแผนที่
+        map.on('click', (e) => {
+            document.getElementById('lat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('lng').value = e.latlng.lng.toFixed(6);
+            
+            if (currentMarker) map.removeLayer(currentMarker);
+            currentMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+        });
+
+        // ฟังก์ชันดึงจุดพิกัดทั้งหมดจากฐานข้อมูล MySQL มาวาดเป็นวงกลมรัศมีพื้นที่เสี่ยง
+        function loadSafetyMap() {
+            fetch('https://0b74tgz3-3000.asse.devtunnels.ms/api/incidents')
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(item => {
+                        let zoneColor = item.risk_level === 'Red' ? '#ff0000' : '#ffcc00';
+                        
+                        L.circle([item.latitude, item.longitude], {
+                            color: zoneColor,
+                            fillColor: zoneColor,
+                            fillOpacity: 0.4,
+                            radius: 100
+                        }).addTo(map).bindPopup(`
+                            <div style="color: black; font-family: Tahoma; font-size: 14px;">
+                                <b>🚨 #${item.hazard_type}</b><br>
+                                <b>รายละเอียด:</b> ${item.description}<br>
+                                <small style="color: gray;">ผู้แจ้งเหตุ: ${item.user_alias}</small>
+                            </div>
+                        `);
+                    });
+                })
+                .catch(err => console.error('โหลดข้อมูลแผนที่ล้มเหลว:', err));
+        }
+
+        // ฟังก์ชันส่งข้อมูลการปักหมุดจากหน้าบ้าน ไปให้หลังบ้านบันทึกลง MySQL
+        function submitReport() {
+            const hazard_type = document.getElementById('hazard_type').value;
+            const description = document.getElementById('description').value;
+            const latitude = document.getElementById('lat').value;
+            const longitude = document.getElementById('lng').value;
+            const risk_level = document.getElementById('risk_level').value;
+
+            if (!latitude || !longitude || !description) {
+                alert('กรุณาเลือกตำแหน่งบนแผนที่ และกรอกรายละเอียดให้ครบถ้วน!');
+                return;
+            }
+
+            fetch('https://0b74tgz3-3000.asse.devtunnels.ms/api/incidents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hazard_type, description, latitude, longitude, risk_level })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // แก้จาก data.alias เป็น data.message เพื่อให้ตรงกับหลังบ้าน
+                alert(`ระบบทำรายการ: ${data.message || 'บันทึกข้อมูลสำเร็จ'}`);
+                document.getElementById('description').value = '';
+                document.getElementById('lat').value = '';
+                document.getElementById('lng').value = '';
+                if (currentMarker) map.removeLayer(currentMarker);
+                
+                // สั่งโหลดหมุดใหม่ทันที
+                loadSafetyMap();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('❌ เกิดข้อผิดพลาดในการส่งข้อมูลไปยัง Server');
+            });
+        }
+
+        // ระบบจำลอง AI Agent สแกนคีย์เวิร์ด
+        function handleChat(e) {
+            if (e.key === 'Enter') {
+                const msg = document.getElementById('user-msg').value;
+                if (!msg.trim()) return;
+
+                const chatBox = document.getElementById('chat-content');
+                chatBox.innerHTML += `<br><b style="color: #81c784;">คุณ:</b> ${msg}`;
+                
+                let reply = "P Diddy รับฟังอยู่นะคะ ข้อมูลทุกอย่างจะปลอดภัยและไม่ระบุตัวตนแน่นอนค่ะ มีพฤติกรรมไหนที่ทำให้คุณรู้สึกไม่ปลอดภัยไหมคะ?";
+                
+                if (msg.includes("เดินตาม") || msg.includes("ตาม")) {
+                    reply = "🚨 พฤติกรรมนี้เข้าข่ายการคุกคามแบบสะกดรอยตาม (#สตอล์กเกอร์) แนะนำให้เดินเข้าที่ชุมชนที่มีแสงสว่าง และรีบกดปักหมุดบน Speak Up แผนที่ตรงนี้เพื่อส่งสัญญาณเตือนเพื่อนๆ ทันทีค่ะ";
+                } 
+                else if (msg.includes("แจ้งความ") || msg.includes("กฎหมาย") || msg.includes("ตำรวจ")) {
+                    reply = "⚖️ ตามกฎหมายอาญา การกระทำอนาจารหรือคุกคามทางเพศในที่สาธารณะมีโทษทั้งจำและปรับค่ะ P Diddy แนะนำให้รวบรวมข้อมูลพิกัดจากแอปนี้ ไปยื่นต่อเจ้าหน้าที่ได้เลยค่ะ";
+                }
+                else if (msg.includes("ครับ") || msg.includes("ผม") || msg.includes("ค่ะ") || msg.includes("ฉัน")) {
+                    reply = "P Diddy รับฟังอยู่นะคะ ข้อมูลทุกอย่างจะปลอดภัยและไม่ระบุตัวตนแน่นอนค่ะ มีพฤติกรรมไหนที่ทำให้คุณรู้สึกไม่ปลอดภัยไหมคะ?";
+                }
+                else if (msg.includes("P Diddy") || msg.includes("ai") || msg.includes("AI") || msg.includes("ai")) {
+                    reply = "เป็น ส้นตีนไรละ เเล้วทำไม?";
+                }
+                else {
+                    reply = "อ่ะล้อเล่นนนนนนนนน";
+                }
+                setTimeout(() => {
+                    chatBox.innerHTML += `<br><span style="color:#ffcc80"><b>P Diddy AI:</b> ${reply}</span>`;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 700);
+                
+                document.getElementById('user-msg').value = '';
+            }
+        }
+
+        loadSafetyMap();
+    </script>
+</body>
+</html>
