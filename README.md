@@ -78,8 +78,8 @@
    * หากต้องการใช้งานผ่านระบบคลาวด์เวอร์ชัน Live ที่จัดเตรียมไว้แล้ว สามารถเปิดใช้งานและทดสอบได้ทันทีโดยไม่ต้องแก้ไข URL ใด ๆ
 ## Back End Server :
 1. TiDB Cloud (tidbcloud.com) คือ แพลตฟอร์มผู้ให้บริการระบบจัดการฐานข้อมูลบนคลาวด์ (Cloud Database) ที่ช่วยให้นักพัฒนาสามารถรันฐานข้อมูลออนไลน์ระดับ Enterprise ได้ง่ายและรวดเร็ว:
-   * tidbcloud.com
+   * https://tidbcloud.com/
 2. Vercel คือ แพลตฟอร์มคลาวด์ (Cloud Platform) ที่ออกแบบมาสำหรับ Deploy (อัปโหลด) หน้าเว็บฝั่งหน้าบ้าน (Frontend) ให้ขึ้นไปออนไลน์บนโลกอินเทอร์เน็ตได้ง่าย รวดเร็ว และมีประสิทธิภาพสูงมาก:
-   * vercel.com
+   * https://vercel.com/
 3. Render (render.com) คือ แพลตฟอร์มคลาวด์แบบ PaaS (Platform-as-a-Service) ที่ช่วยให้นักพัฒนาสามารถอัปโหลดและรันระบบหลังบ้าน (Backend Server), ฐานข้อมูล (Database), หรืองานประมวลผลเบื้องหลัง (Background Worker) ขึ้นไปออนไลน์ได้ง่ายๆ โดยแทบไม่ต้องตั้งค่า Server (เช่น Linux, Nginx, Docker) ด้วยตัวเองเลย:
-   * Render.com
+   * https://Render.com/
