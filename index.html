@@ -196,7 +196,9 @@
             </div>
     </div>
 
-    
+    <div id="leftSidebar" class="...คลาสเดิมของ Bro...">
+        ...เนื้อหาเมนูแจ้งเหตุ...
+    </div>
 
     <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -244,15 +246,15 @@
         .catch(err => console.error('โหลดข้อมูลล้มเหลว:', err));
 }
 
-    // 🔥 ฟังก์ชันแสดงผลกล่องข้อมูลมุมจอเวอร์ชันชัวร์ 100%
-    // 🔥 วางแทนฟังก์ชัน showIncidentFeed อันเดิม
     function showIncidentFeed(clickedItem, allData) {
         const panel = document.getElementById('incidentFeedPanel');
         const content = document.getElementById('feedContent');
         const title = document.getElementById('feedTitle');
         
-        // ดึงกล่องเมนูสีม่วง (เช็ก id ให้ตรงกับของ Bro นะครับ)
-        const sidebar = document.getElementById('leftSidebar') || document.querySelector('.sidebar-container');
+        // 🔥 ดักจับแผงเมนูทุกรูปแบบ (ไม่ว่าจะใช้ ID หรือ Class ชื่ออะไร)
+        const sidebar = document.getElementById('leftSidebar') || 
+                        document.querySelector('.sidebar-container') || 
+                        document.querySelector('[class*="sidebar"]'); // ดักคลาสที่มีคำว่า sidebar ทั้งหมด
         
         if (!panel || !content || !title) return;
 
@@ -277,26 +279,27 @@
             `;
         });
 
-        // 📱 ถ้าเปิดในมือถือ (จอแคบกว่า 768px) สั่งซ่อนเมนูสีม่วงลงไปทันที
+        // 📱 ถ้าเปิดในมือถือ ซ่อนเมนูแจ้งเหตุลงไปแน่นอน
         if (window.innerWidth <= 768 && sidebar) {
-            sidebar.style.display = 'none';
+            sidebar.style.setProperty('display', 'none', 'important'); // บังคับซ่อนแบบเด็ดขาด
         }
 
         panel.style.display = 'flex';
     }
 
-    // 🔥 วางแทนฟังก์ชัน closeFeedPanel อันเดิม
     function closeFeedPanel() {
         const panel = document.getElementById('incidentFeedPanel');
-        const sidebar = document.getElementById('leftSidebar') || document.querySelector('.sidebar-container');
+        const sidebar = document.getElementById('leftSidebar') || 
+                        document.querySelector('.sidebar-container') || 
+                        document.querySelector('[class*="sidebar"]');
         
         if (panel) {
             panel.style.display = 'none';
         }
         
-        // 📱 ถ้าปิด Feed Box ในมือถือ สั่งให้เมนูสีม่วงเด้งกลับมาโชว์ใหม่
+        // 📱 ถ้าปิด Feed Box ในมือถือ เรียกแผงเมนูกลับคืนมา
         if (window.innerWidth <= 768 && sidebar) {
-            sidebar.style.display = 'block';
+            sidebar.style.setProperty('display', 'block', 'important'); // บังคับเปิดคืนมา
         }
     }
 
