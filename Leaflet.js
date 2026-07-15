@@ -1,6 +1,6 @@
 // แก้ไขฟังก์ชันดึงข้อมูลให้รองรับการเปิดไฟล์จากเครื่องโดยตรง
         function loadSafetyMap() {
-            fetch('https://0b74tgz3-3000.asse.devtunnels.ms/api/incidents')
+            fetch('https://sa-projectxz.onrender.com/api/incidents')
                 .then(res => {
                     if(!res.ok) throw new Error('Network response was not ok');
                     return res.json();
