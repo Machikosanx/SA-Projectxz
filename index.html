@@ -150,7 +150,7 @@
 
         // ฟังก์ชันดึงจุดพิกัดทั้งหมดจากฐานข้อมูล MySQL มาวาดเป็นวงกลมรัศมีพื้นที่เสี่ยง
         function loadSafetyMap() {
-            fetch('https://0b74tgz3-3000.asse.devtunnels.ms/api/incidents')
+            fetch('https://sa-projectxz.onrender.com/api/incidents')
                 .then(res => res.json())
                 .then(data => {
                     data.forEach(item => {
@@ -186,7 +186,7 @@
                 return;
             }
 
-            fetch('https://0b74tgz3-3000.asse.devtunnels.ms/api/incidents', {
+            fetch('https://sa-projectxz.onrender.com/api/incidents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ hazard_type, description, latitude, longitude, risk_level })
