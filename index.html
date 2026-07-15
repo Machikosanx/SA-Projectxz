@@ -98,49 +98,55 @@
             color: #333;
         }
 
-        /* การ์ดข้อมูลแต่ละรายการในกล่อง */
-        .feed-item {
-            background: #f9f9f9;
-            border-left: 4px solid #ff4d4d;
-            padding: 8px 10px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        .feed-item:last-child {
-            margin-bottom: 0;
+                /* ตัวครอบใหญ่สุดของหน้าเว็บ */
+        .main-wrapper {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
         }
 
-                /* สร้าง Class สำหรับ "การซ่อนแถบซ้าย" */
+        /* 📊 ปรับปรุงแผงด้านซ้าย (Sidebar) */
+        .sidebar-container {
+            width: 400px; /* หรือขนาดเดิมที่ Bro ตั้งไว้ */
+            height: 100%;
+            background: #231145; /* สีม่วงของ Bro */
+            transition: all 0.3s ease; /* ทำให้การย่อ/ขยายเนียนตา */
+            position: relative;
+            flex-shrink: 0; /* ห้ามโดนแผนที่บีบขนาด */
+        }
+
+        /* 🎯 โค้ดสำคัญ: เมื่อสั่งย่อแผงซ้าย ให้เหลือความกว้างเป็น 0 */
         .sidebar-hidden {
-            transform: translateX(-100%); /* ดันแผงซ้ายออกไปนอกจอ */
-            transition: transform 0.3s ease; /* เพิ่ม Animation เวลาขยับ */
+            width: 0px !important;
+            min-width: 0px !important;
+            overflow: hidden; /* ซ่อนคอนเทนต์ข้างในให้หมด */
         }
 
-        /* คุมแผงซ้ายเดิม ให้มีการขยับที่นุ่มนวล */
-        .sidebar-container { /* เช็กชื่อ Class ของแผงซ้ายคุณใน HTML นะครับ ถ้าเป็น ID ก็ใช้ # */
-            transition: transform 0.3s ease;
-            position: relative; /* เพื่อให้วางปุ่มสลับได้ */
+        /* 🗺️ ปรับปรุงฝั่งแผนที่ */
+        #map {
+            flex-grow: 1; /* ให้แผนที่ขยายตัวกินพื้นที่ทั้งหมดที่เหลือโดยอัตโนมัติ */
+            height: 100%;
+            transition: all 0.3s ease;
         }
 
-        /* ปุ่มสำหรับกด สลับเปิด/ปิด */
+        /* 🔘 ปุ่มกดสลับ (ให้อยู่ตำแหน่งเดิมแต่ปรับตามการหด) */
         .toggle-sidebar-btn {
             position: absolute;
-            top: 20px; /* วางไว้แถวๆ ด้านบน */
-            right: -40px; /* ให้ยื่นออกไปนอกแผงซ้ายนิดหน่อย เวลาแผงปิดปุ่มยังอยู่ */
+            top: 20px;
+            right: -40px; /* ให้ยื่นออกมานอกแผงซ้าย */
             width: 40px;
             height: 40px;
-            background: #ff6a42; /* สีเดียวกับปุ่มส่งข้อมูลของคุณ */
+            background: #ff6a42;
             color: white;
             border: none;
-            border-radius: 0 8px 8px 0; /* มนแค่ฝั่งขวา */
+            border-radius: 0 8px 8px 0;
             cursor: pointer;
             font-size: 20px;
-            z-index: 1001; /* ให้อยู่เหนือแผนที่ */
+            z-index: 1001;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
         }
 
         /* 📱 โค้ดแก้บัคสำหรับหน้าจอมือถือ (Responsive CSS Media Queries) */
@@ -224,10 +230,15 @@
             </div>
     </div>
 
-    <div id="leftSidebar" class="sidebar-container"> <button id="toggleSidebarBtn" class="toggle-sidebar-btn" onclick="toggleSidebar()">
-        &lt; </button>
+    <div class="main-wrapper">
     
-    </div>
+    <div id="leftSidebar" class="sidebar-container">
+        <button id="toggleSidebarBtn" class="toggle-sidebar-btn" onclick="toggleSidebar()">&lt;</button>
+        </div>
+
+    <div id="map"></div>
+
+</div>
 
     <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -394,22 +405,26 @@
                 document.getElementById('user-msg').value = '';
             }
         }
-            // ฟังก์ชันสลับสถานะแผงซ้าย ย่อ/ขยาย
+
     function toggleSidebar() {
         const sidebar = document.getElementById('leftSidebar');
         const toggleBtn = document.getElementById('toggleSidebarBtn');
         
         if (!sidebar || !toggleBtn) return;
 
-        // สลับ Class 'sidebar-hidden' (ถ้ามีอยู่ให้ลบ ถ้าไม่มีให้ใส่)
+        // สลับ Class ย่อ/ขยาย
         sidebar.classList.toggle('sidebar-hidden');
         
-        // เปลี่ยนลูกศรบนปุ่มตามสถานะ
         if (sidebar.classList.contains('sidebar-hidden')) {
-            toggleBtn.innerHTML = '&gt;'; // เมื่อแผงปิด เปลี่ยนเป็น > (ให้กดเปิด)
+            toggleBtn.innerHTML = '&gt;'; // เปลี่ยนลูกศรเป็น >
         } else {
-            toggleBtn.innerHTML = '&lt;'; // เมื่อแผงเปิด เปลี่ยนเป็น < (ให้กดปิด)
+            toggleBtn.innerHTML = '&lt;'; // เปลี่ยนลูกศรเป็น <
         }
+
+        // 🔥 บังคับให้ Leaflet คำนวณขนาดและวาดแผนที่ใหม่ให้เต็มจอทันที
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300); // รอดึงจังหวะ 0.3 วินาทีให้ Animation เลื่อนเสร็จก่อนแล้วสั่งเคลียร์จอ
     }
 
         loadSafetyMap();
