@@ -187,6 +187,32 @@
             backdrop-filter: blur(10px);
         }
 
+        /* 🔥 ซ่อน Scrollbar ของแผงแจ้งเหตุ สำหรับ Chrome, Safari, Opera, Brave */
+        .incident-feed-panel::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        /* 🔥 ซ่อน Scrollbar ของช่องแชทบอท สำหรับ Chrome, Safari, Opera, Brave */
+        .chat-box::-webkit-scrollbar, .ai-agent-box::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        .feed-content, #feedContent {
+            padding: 12px !important;
+            overflow-y: auto;
+            color: rgba(255, 255, 255, 0.9) !important;
+            flex-grow: 1;
+
+            /* 🔥 ซ่อน Scrollbar ด้านในของ Feed Content สำหรับ Firefox และ IE/Edge */
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+
+        /* 🔥 ซ่อน Scrollbar ด้านในของ Feed Content สำหรับ Chrome, Safari, Opera, Brave */
+        .feed-content::-webkit-scrollbar, #feedContent::-webkit-scrollbar {
+            display: none !important;
+        }
+
         .feed-header {
             background: linear-gradient(90deg, #ff4d4d, #ff7b54) !important;
             color: white !important;
