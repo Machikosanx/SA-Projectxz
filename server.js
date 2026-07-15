@@ -31,7 +31,7 @@ app.post('/api/incidents', (req, res) => {
     const { hazard_type, description, latitude, longitude, risk_level } = req.body;
     const randomAlias = 'user_' + Math.floor(100000 + Math.random() * 900000); 
     
-    const query = 'INSERT INTO speakup_incidents (user_alias, hazard_type, description, latitude, longitude, risk_level) VALUES (?, ?, ?, ?, ?, ?)';
+    const query = 'INSERT INTO incidents (user_alias, hazard_type, description, latitude, longitude, risk_level) VALUES (?, ?, ?, ?, ?, ?)';
     
     db.query(query, [randomAlias, hazard_type, description, latitude, longitude, risk_level], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -41,7 +41,7 @@ app.post('/api/incidents', (req, res) => {
 
 // 3. API สำหรับดึงพิกัดทั้งหมดส่งกลับไปวาดจุดสีเหลือง/แดงบนแผนที่
 app.get('/api/incidents', (req, res) => {
-    db.query('SELECT * FROM speakup_incidents', (err, results) => {
+    db.query('SELECT * FROM incidents', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
