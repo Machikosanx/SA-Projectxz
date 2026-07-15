@@ -122,18 +122,20 @@
             button { padding: 14px; font-size: 16px; } /* ขยายขนาดปุ่มเพิ่มความง่ายในการกดผ่านมือถือ */
         }
 
-        /* 🔥 วางเพิ่มต่อท้ายในแท็บ <style> */
+       /* 🔥 แก้ไขโค้ดดักจับขนาดหน้าจอเวอร์ชันแก้ทางโหมดจำลองมือถือ */
         @media (max-width: 768px) {
             .incident-feed-panel {
                 position: fixed !important;
-                top: 50% !important;
+                /* ย้ายตำแหน่งขึ้นมาอยู่กึ่งกลางของครึ่งบนหน้าจอ (โซนแผนที่พอดี) */
+                top: 25% !important; 
                 left: 50% !important;
-                transform: translate(-50%, -50%) !important;
+                transform: translate(-50%, -25%) !important;
                 bottom: auto !important;
                 right: auto !important;
                 width: 90% !important;
-                max-height: 70vh !important;
-                z-index: 9999 !important; /* ดันให้ลอยทับทุกอย่างในมือถือ */
+                max-height: 45vh !important; /* จำกัดความสูงไม่ให้ล้นลงมาทับข้างล่าง */
+                z-index: 9999 !important; /* ดันให้อยู่เหนือทุกเลเยอร์ */
+                box-shadow: 0 8px 30px rgba(0,0,0,0.5) !important;
             }
         }
             
@@ -196,9 +198,6 @@
             </div>
     </div>
 
-    <div id="leftSidebar" class="...คลาสเดิมของ Bro...">
-        ...เนื้อหาเมนูแจ้งเหตุ...
-    </div>
 
     <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
