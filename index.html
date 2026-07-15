@@ -98,56 +98,6 @@
             color: #333;
         }
 
-                /* ตัวครอบใหญ่สุดของหน้าเว็บ */
-        .main-wrapper {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* 📊 ปรับปรุงแผงด้านซ้าย (Sidebar) */
-        .sidebar-container {
-            width: 400px; /* หรือขนาดเดิมที่ Bro ตั้งไว้ */
-            height: 100%;
-            background: #231145; /* สีม่วงของ Bro */
-            transition: all 0.3s ease; /* ทำให้การย่อ/ขยายเนียนตา */
-            position: relative;
-            flex-shrink: 0; /* ห้ามโดนแผนที่บีบขนาด */
-        }
-
-        /* 🎯 โค้ดสำคัญ: เมื่อสั่งย่อแผงซ้าย ให้เหลือความกว้างเป็น 0 */
-        .sidebar-hidden {
-            width: 0px !important;
-            min-width: 0px !important;
-            overflow: hidden; /* ซ่อนคอนเทนต์ข้างในให้หมด */
-        }
-
-        /* 🗺️ ปรับปรุงฝั่งแผนที่ */
-        #map {
-            flex-grow: 1; /* ให้แผนที่ขยายตัวกินพื้นที่ทั้งหมดที่เหลือโดยอัตโนมัติ */
-            height: 100%;
-            transition: all 0.3s ease;
-        }
-
-        /* 🔘 ปุ่มกดสลับ (ให้อยู่ตำแหน่งเดิมแต่ปรับตามการหด) */
-        .toggle-sidebar-btn {
-            position: absolute;
-            top: 20px;
-            right: -40px; /* ให้ยื่นออกมานอกแผงซ้าย */
-            width: 40px;
-            height: 40px;
-            background: #ff6a42;
-            color: white;
-            border: none;
-            border-radius: 0 8px 8px 0;
-            cursor: pointer;
-            font-size: 20px;
-            z-index: 1001;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
 
         /* 📱 โค้ดแก้บัคสำหรับหน้าจอมือถือ (Responsive CSS Media Queries) */
         @media (max-width: 768px) {
@@ -230,15 +180,7 @@
             </div>
     </div>
 
-    <div class="main-wrapper">
     
-    <div id="leftSidebar" class="sidebar-container">
-        <button id="toggleSidebarBtn" class="toggle-sidebar-btn" onclick="toggleSidebar()">&lt;</button>
-        </div>
-
-    <div id="map"></div>
-
-</div>
 
     <!-- เรียกใช้ระบบแผนที่ Leaflet.js -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -406,26 +348,6 @@
             }
         }
 
-    function toggleSidebar() {
-        const sidebar = document.getElementById('leftSidebar');
-        const toggleBtn = document.getElementById('toggleSidebarBtn');
-        
-        if (!sidebar || !toggleBtn) return;
-
-        // สลับ Class ย่อ/ขยาย
-        sidebar.classList.toggle('sidebar-hidden');
-        
-        if (sidebar.classList.contains('sidebar-hidden')) {
-            toggleBtn.innerHTML = '&gt;'; // เปลี่ยนลูกศรเป็น >
-        } else {
-            toggleBtn.innerHTML = '&lt;'; // เปลี่ยนลูกศรเป็น <
-        }
-
-        // 🔥 บังคับให้ Leaflet คำนวณขนาดและวาดแผนที่ใหม่ให้เต็มจอทันที
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 300); // รอดึงจังหวะ 0.3 วินาทีให้ Animation เลื่อนเสร็จก่อนแล้วสั่งเคลียร์จอ
-    }
 
         loadSafetyMap();
     </script>
