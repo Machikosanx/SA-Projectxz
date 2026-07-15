@@ -8,10 +8,14 @@ app.use(express.json());
 
 // 1. เชื่อมต่อไปยังฐานข้อมูลใน XAMPP ที่คุณสร้างไว้ตอนแรก
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '', // ค่าเริ่มต้นของ XAMPP จะเป็นค่าว่าง
-    database: 'speakup_db' // ชื่อฐานข้อมูลที่คุณสร้างในหน้า phpMyAdmin
+    host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+    port: 4000,
+    user: 'WwLL58kUXUz7P9u.root',
+    password: 'vGh8ACfYIHpOaIG1', // ค่าเริ่มต้นของ XAMPP จะเป็นค่าว่าง
+    database: 'test', // ชื่อฐานข้อมูลที่คุณสร้างในหน้า phpMyAdmin
+    ssl: {
+        rejectUnauthorized: true
+    }
 });
 
 db.connect((err) => {
